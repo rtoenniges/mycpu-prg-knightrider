@@ -1,0 +1,178 @@
+                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                ;~~  [MyCA] Macro Cross Assembler V1.0 for MyCPU, (c) 2015 by Dennis Kuschel  ~~
+                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                ;[ASCII]
+                
+                ;******************************************
+                ;************* Knight Rider  **************
+                ;******************************************
+                ;*******  2015 by Robin Tönniges  *********
+                ;******************************************
+                
+                ;[File: D:\Program Files (x86)\myca\include\sys.hsm]
+                ;[ASCII]
+                
+                KERN_WARMSTART      EQU 0220h
+                KERN_FILEINPUT      EQU 027Ah
+                KERN_GETINFO        EQU 02A2h
+                KERN_REGFILEDEVICE  EQU 0264h
+                KERN_FSREGISTER     EQU 02AEh
+                KERN_FSUNREGISTER   EQU 02B0h
+                KERN_GETCHECKSUM16  EQU 02B2h
+                KERN_SETMEMBORDERS  EQU 029Eh
+                KERN_SETIDLEFUNC    EQU 02EAh
+                KERN_IDLE           EQU 02ECh
+                KERN_TESTVERSION    EQU 030Ch
+                KERN_CONFIGBYTE     EQU 030Ah
+                KERN_IDEDRIVER      EQU 030Eh
+                KERN_MULTIPLEX      EQU 0312h
+                KERN_PRGMOVE        EQU 032Ah
+                
+                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                ;[ASCII]
+                
+                ;[File: D:\Program Files (x86)\myca\include\code.hsm]
+                ;[ASCII]
+                
+                KERN_ADAPTOPCODES   EQU 02C4h
+                KERN_EXECUTEFILE    EQU 02BEh
+                KERN_EXITTSR        EQU 02C2h
+                KERN_KILLPROGRAM    EQU 02C0h
+                KERN_KILLPROGEX     EQU 0328h
+                KERN_SPECROMCALL    EQU 02B6h
+                KERN_CALLFROMROM    EQU 02B8h
+                KERN_CALLROM        EQU 02BAh
+                KERN_LIBCALL        EQU 02CAh
+                KERN_LIBSELECT      EQU 02CCh
+                KERN_LIBDESELECT    EQU 02CEh
+                KERN_LIBUNLOAD      EQU 02D0h
+                KERN_ISLOADED       EQU 02D2h
+                KERN_ASSERT         EQU 0326h
+                
+                REG_ROMPAGE  SET 3900h
+                
+                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                
+                ORG 8000h
+    8000 0280    DW 8002h
+    8002 0D80    DW tsrinitfunc
+    8004 8880    DW termfunc
+    8006 0D80    DW codestart
+                
+                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                ;-------------------------------------;
+                ; declare variables
+                
+                KERN_IOCHANGELED    EQU 0306h
+                
+    8008 03     VAR_timerdiv     DB    3 ;Timer divison factor
+    8009 00     VAR_timerhandle  DB    0
+    800A 00     VAR_timerloops   DB    0
+    800B 01     VAR_leds         DB    01h
+    800C 00     VAR_direction    DB    0
+                
+                ;-------------------------------------;
+                ; begin of assembly code
+                
+                codestart
+                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                ;[ASCII]
+                
+                tsrinitfunc
+    800D 04        CLC
+    800E 1BD202    JSR (KERN_ISLOADED)
+    8011 2C        CLA
+    8012 171F80    JPC exit_tsr
+    8015 1A2080    JSR initfunc
+    8018 20        TAX
+    8019 181F80    JNZ exit_tsr
+    801C 11C202    JMP (KERN_EXITTSR)
+                exit_tsr
+    801F 1F        RTS
+                
+                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                initfunc  
+                
+                        ;move this program to a separate memory page
+    8020 6C0D80         LPT  #codestart
+    8023 300E           LDA  #0Eh
+    8025 1B1203         JSR  (KERN_MULTIPLEX)  ;may fail on older kernel
+                
+    8028 320880         LDAA VAR_timerdiv
+    802B 420A80         STAA VAR_timerloops
+    802E 320B80         LDAA VAR_leds
+    8031 1B0603         JSR  (KERN_IOCHANGELED)
+                
+                        ;Setup timer-interrupt
+    8034 2C             CLA    
+    8035 6C4080         LPT  #timercallback  
+    8038 1B1203         JSR  (KERN_MULTIPLEX) 
+    803B 420980         STAA VAR_timerhandle  ;Save adress of timerhandle
+    803E 2C             CLA
+    803F 1F             RTS
+                
+                ;Timer interrupt
+                timercallback
+    8040 8D0A80         DECA VAR_timerloops
+    8043 194880         JPZ  start
+    8046 2C             CLA
+    8047 1F             RTS
+                
+    8048 320880 start   LDAA VAR_timerdiv
+    804B 420A80         STAA VAR_timerloops
+    804E 320B80         LDAA VAR_leds
+    8051 7001           CMP  #1
+    8053 196680         JPZ  setl
+    8056 320B80         LDAA VAR_leds
+    8059 7008           CMP  #8
+    805B 186A80         JNZ  checkdir
+                
+    805E 3001   setr    LDA #1
+    8060 420C80         STAA VAR_direction
+    8063 106A80         JMP  checkdir           
+                
+    8066 2C     setl    CLA
+    8067 420C80         STAA VAR_direction
+                
+    806A 320C80 checkdir  LDAA VAR_direction
+    806D 7000             CMP  #0
+    806F 187C80           JNZ  right
+                
+    8072 AD0B80 left    SHLA VAR_leds
+    8075 320B80         LDAA VAR_leds
+    8078 1B0603         JSR  (KERN_IOCHANGELED)
+    807B 1F             RTS
+                
+    807C BD0B80 right   SHRA VAR_leds
+    807F 320B80         LDAA VAR_leds
+    8082 1B0603         JSR  (KERN_IOCHANGELED)
+    8085 1F             RTS
+                
+    8086 04     _RTS    CLC
+    8087 1F             RTS
+                
+                termfunc  
+                        ;set leds to default
+    8088 30FF           LDA  #0FFh
+    808A 1B0603         JSR  (KERN_IOCHANGELED)
+                        ;uninstall timer interrupt
+    808D 520980         LDXA VAR_timerhandle
+    8090 198680         JPZ  _RTS
+    8093 2F0980         STZ  VAR_timerhandle
+    8096 3001           LDA  #1
+    8098 111203         JMP  (KERN_MULTIPLEX)
+    809B 1F             RTS
+                
+
+
+Segment Table:
+**************
+Segment Name                 Startaddr  Endaddr     Size  Type
+=========================================================================
+default                           8000     809C       9C  CODE  fixed
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+No errors found.
