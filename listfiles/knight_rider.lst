@@ -1,17 +1,17 @@
-                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                ;~~  [MyCA] Macro Cross Assembler V1.0 for MyCPU, (c) 2015 by Dennis Kuschel  ~~
-                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                ;~~  [MyCA] Macro Cross Assembler V1.05 for MyCPU, (c) 2016 by Dennis Kuschel  ~~
+                ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                ;[File: knight_rider.asm]
                 ;[ASCII]
                 
                 ;******************************************
                 ;************* Knight Rider  **************
                 ;******************************************
-                ;*******  2015 by Robin Tönniges  *********
+                ;*******  2017 by Robin TÃ¶nniges  *********
                 ;******************************************
                 
-                ;[File: D:\Program Files (x86)\myca\include\sys.hsm]
+                ;[File: C:\Program Files (x86)\myca\include\sys.hsm]
                 ;[ASCII]
                 
                 KERN_WARMSTART      EQU 0220h
@@ -30,11 +30,11 @@
                 KERN_MULTIPLEX      EQU 0312h
                 KERN_PRGMOVE        EQU 032Ah
                 
-                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
-                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                ;[File: knight_rider.asm]
+                ;[File: C:\Program Files (x86)\myca\include\tsr.hsm]
                 ;[ASCII]
                 
-                ;[File: D:\Program Files (x86)\myca\include\code.hsm]
+                ;[File: C:\Program Files (x86)\myca\include\code.hsm]
                 ;[ASCII]
                 
                 KERN_ADAPTOPCODES   EQU 02C4h
@@ -54,117 +54,128 @@
                 
                 REG_ROMPAGE  SET 3900h
                 
-                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                ;[File: C:\Program Files (x86)\myca\include\tsr.hsm]
                 
                 ORG 8000h
     8000 0280    DW 8002h
-    8002 0D80    DW tsrinitfunc
-    8004 8880    DW termfunc
-    8006 0D80    DW codestart
+    8002 0C80    DW tsrinitfunc
+    8004 7980    DW termfunc
+    8006 0C80    DW codestart
                 
-                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
-                ;-------------------------------------;
-                ; declare variables
-                
+                ;[File: knight_rider.asm]
+                ;Addresses
                 KERN_IOCHANGELED    EQU 0306h
                 
-    8008 03     VAR_timerdiv     DB    3 ;Timer divison factor
-    8009 00     VAR_timerhandle  DB    0
-    800A 00     VAR_timerloops   DB    0
-    800B 01     VAR_leds         DB    01h
-    800C 00     VAR_direction    DB    0
+                ;Parameter
+                PARAM_TIMERDIV      SET 4   ;Timer divison factor
+                
+                ;Variables
+    8008 00     VAR_timerhandle     DB  0
+    8009 00     VAR_timerdiv        DB  0
+    800A 01     VAR_leds            DB  01h
+    800B 00     VAR_direction       DB  0
                 
                 ;-------------------------------------;
                 ; begin of assembly code
                 
                 codestart
-                ;[File: D:\Program Files (x86)\myca\include\tsr.hsm]
+                ;[File: C:\Program Files (x86)\myca\include\tsr.hsm]
                 ;[ASCII]
                 
                 tsrinitfunc
-    800D 04        CLC
-    800E 1BD202    JSR (KERN_ISLOADED)
-    8011 2C        CLA
-    8012 171F80    JPC exit_tsr
-    8015 1A2080    JSR initfunc
-    8018 20        TAX
-    8019 181F80    JNZ exit_tsr
-    801C 11C202    JMP (KERN_EXITTSR)
+    800C 04        CLC
+    800D 1BD202    JSR (KERN_ISLOADED)
+    8010 2C        CLA
+    8011 171E80    JPC exit_tsr
+    8014 1A1F80    JSR initfunc
+    8017 20        TAX
+    8018 181E80    JNZ exit_tsr
+    801B 11C202    JMP (KERN_EXITTSR)
                 exit_tsr
-    801F 1F        RTS
+    801E 1F        RTS
                 
-                ;[File: C:\Users\Robin\Desktop\MyCPU\software\asm\knight_rider.asm]
+                ;[File: knight_rider.asm]
+                ;--------------------------------------------------------- 
+                ;TSR init 
+                ;--------------------------------------------------------- 
                 initfunc  
                 
-                        ;move this program to a separate memory page
-    8020 6C0D80         LPT  #codestart
-    8023 300E           LDA  #0Eh
-    8025 1B1203         JSR  (KERN_MULTIPLEX)  ;may fail on older kernel
+                            ;move this program to a separate memory page
+                            ;LPT  #codestart
+                            ;LDA  #0Eh
+                            ;JSR  (KERN_MULTIPLEX)  ;may fail on older kernel
                 
-    8028 320880         LDAA VAR_timerdiv
-    802B 420A80         STAA VAR_timerloops
-    802E 320B80         LDAA VAR_leds
-    8031 1B0603         JSR  (KERN_IOCHANGELED)
+    801F 3004               LDA  #PARAM_TIMERDIV
+    8021 420980             STAA VAR_timerdiv
+    8024 320A80             LDAA VAR_leds
+    8027 1B0603             JSR  (KERN_IOCHANGELED)
                 
-                        ;Setup timer-interrupt
-    8034 2C             CLA    
-    8035 6C4080         LPT  #timercallback  
-    8038 1B1203         JSR  (KERN_MULTIPLEX) 
-    803B 420980         STAA VAR_timerhandle  ;Save adress of timerhandle
-    803E 2C             CLA
-    803F 1F             RTS
+                            ;Setup timer-interrupt
+    802A 2C                 CLA    
+    802B 6C3680             LPT  #timercallback  
+    802E 1B1203             JSR  (KERN_MULTIPLEX) 
+    8031 420880             STAA VAR_timerhandle  ;Save adress of timerhandle
+    8034 2C                 CLA
+    8035 1F                 RTS
                 
-                ;Timer interrupt
+                ;--------------------------------------------------------- 
+                ;Timer interrupt   
+                ;--------------------------------------------------------- 
                 timercallback
-    8040 8D0A80         DECA VAR_timerloops
-    8043 194880         JPZ  start
-    8046 2C             CLA
-    8047 1F             RTS
+    8036 8D0980             DECA VAR_timerdiv
+    8039 193D80             JPZ  start
+    803C 1F                 RTS
                 
-    8048 320880 start   LDAA VAR_timerdiv
-    804B 420A80         STAA VAR_timerloops
-    804E 320B80         LDAA VAR_leds
-    8051 7001           CMP  #1
-    8053 196680         JPZ  setl
-    8056 320B80         LDAA VAR_leds
-    8059 7008           CMP  #8
-    805B 186A80         JNZ  checkdir
+                ;--------------------------------------------------------- 
+                ;Main program 
+                ;--------------------------------------------------------- 
+                start   
+    803D 3004               LDA  #PARAM_TIMERDIV
+    803F 420980             STAA VAR_timerdiv
                 
-    805E 3001   setr    LDA #1
-    8060 420C80         STAA VAR_direction
-    8063 106A80         JMP  checkdir           
+    8042 320A80             LDAA VAR_leds
+    8045 7001               CMP  #01h
+    8047 195780             JPZ  setl
+    804A 7008               CMP  #08h
+    804C 185D80             JNZ  checkdir
                 
-    8066 2C     setl    CLA
-    8067 420C80         STAA VAR_direction
+    804F 3001   setr        LDA #01h
+    8051 420B80             STAA VAR_direction
+    8054 106D80             JMP  right           
                 
-    806A 320C80 checkdir  LDAA VAR_direction
-    806D 7000             CMP  #0
-    806F 187C80           JNZ  right
+    8057 2F0B80 setl        STZ VAR_direction
+    805A 106380             JMP  left
                 
-    8072 AD0B80 left    SHLA VAR_leds
-    8075 320B80         LDAA VAR_leds
-    8078 1B0603         JSR  (KERN_IOCHANGELED)
-    807B 1F             RTS
+    805D 320B80 checkdir    LDAA VAR_direction
+    8060 186D80             JNZ  right
                 
-    807C BD0B80 right   SHRA VAR_leds
-    807F 320B80         LDAA VAR_leds
-    8082 1B0603         JSR  (KERN_IOCHANGELED)
-    8085 1F             RTS
+    8063 AD0A80 left        SHLA VAR_leds
+    8066 320A80             LDAA VAR_leds
+    8069 1B0603             JSR  (KERN_IOCHANGELED)
+    806C 1F                 RTS
                 
-    8086 04     _RTS    CLC
-    8087 1F             RTS
+    806D BD0A80 right       SHRA VAR_leds
+    8070 320A80             LDAA VAR_leds
+    8073 1B0603             JSR  (KERN_IOCHANGELED)
+    8076 1F                 RTS
                 
+    8077 04     _RTS        CLC
+    8078 1F                 RTS
+                
+                ;--------------------------------------------------------- 
+                ;TSR termination
+                ;--------------------------------------------------------- 
                 termfunc  
-                        ;set leds to default
-    8088 30FF           LDA  #0FFh
-    808A 1B0603         JSR  (KERN_IOCHANGELED)
-                        ;uninstall timer interrupt
-    808D 520980         LDXA VAR_timerhandle
-    8090 198680         JPZ  _RTS
-    8093 2F0980         STZ  VAR_timerhandle
-    8096 3001           LDA  #1
-    8098 111203         JMP  (KERN_MULTIPLEX)
-    809B 1F             RTS
+                            ;set leds to default
+    8079 30FF               LDA  #FFh
+    807B 1B0603             JSR  (KERN_IOCHANGELED)
+                            ;uninstall timer interrupt
+    807E 520880             LDXA VAR_timerhandle
+    8081 197780             JPZ  _RTS
+    8084 2F0880             STZ  VAR_timerhandle
+    8087 3001               LDA  #01h
+    8089 111203             JMP  (KERN_MULTIPLEX)
+    808C 1F                 RTS
                 
 
 
@@ -172,7 +183,7 @@ Segment Table:
 **************
 Segment Name                 Startaddr  Endaddr     Size  Type
 =========================================================================
-default                           8000     809C       9C  CODE  fixed
+default                           8000     808C       8D  CODE  fixed
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 No errors found.
