@@ -1,1 +1,15 @@
+gitops:
+  manifest_projects:
+  - id: mycpu-prg-knightrider
+    default_namespace: my-ns
+    paths:
+      # Read all YAML files from this directory.
+    - glob: '/*.yaml'
+      # Read all .yaml files from team2/apps and all subdirectories.
+    reconcile_timeout: 3600s
+    dry_run_strategy: none
+    prune: true
+    prune_timeout: 3600s
+    prune_propagation_policy: foreground
+    inventory_policy: must_match
 
