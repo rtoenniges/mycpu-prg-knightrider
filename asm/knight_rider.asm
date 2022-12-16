@@ -21,7 +21,6 @@ VAR_timerdiv        DB  0
 VAR_leds            DB  01h
 VAR_direction       DB  0
 
-
 ;-------------------------------------;
 ; begin of assembly code
 
